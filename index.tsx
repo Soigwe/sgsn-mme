@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
+import axios from 'axios';
+
 // DOM element references
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
 const extractButton = document.getElementById('extract-button') as HTMLButtonElement;
@@ -172,3 +174,26 @@ function generateCsv(data: ExtractedData[]) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// Example function to fetch data from the server
+const fetchAirtelPData = async () => {
+  try {
+    const response = await axios.get('/api/airtelp');  // This will be proxied to your FastAPI server
+    // Handle the response data here
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
+
+// If you prefer using fetch instead of axios:
+const fetchAirtelPDataWithFetch = async () => {
+  try {
+    const response = await fetch('/api/airtelp');
+    const data = await response.json();
+    // Handle the data here
+    console.log(data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
