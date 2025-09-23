@@ -8,14 +8,13 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "@google/genai": "^1.19.0"
+  },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "tsx": "^4.20.5",
+    
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
-  },
-  "dependencies": {
-    "@types/axios": "^0.14.4",
-    "axios": "^1.12.2"
   }
 }
