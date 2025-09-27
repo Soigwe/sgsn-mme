@@ -213,6 +213,36 @@ button:disabled {
   font-weight: 500;
 }
 
+/* Table Preview Styles */
+.table-preview-wrapper {
+  position: relative;
+}
+
+.table-preview-wrapper.preview-active .table-container {
+  max-height: 220px; /* Approx 5 rows + header */
+  overflow: hidden;
+  position: relative;
+  /* Add a fade-out effect at the bottom */
+  -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+}
+
+.show-more-button {
+  display: block;
+  margin: 1rem auto 0;
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.show-more-button:hover {
+  background-color: var(--ai-response-bg);
+  color: var(--primary-hover-color);
+  box-shadow: none;
+}
+
 .hidden {
   display: none;
 }

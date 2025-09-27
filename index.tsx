@@ -115,7 +115,7 @@ extractButton.addEventListener('click', async () => {
       }
 
       if (extractedData.length > 0) {
-        displayDataAsTable(extractedData, responseContainer);
+        displayDataAsTable(extractedData, responseContainer, true);
         downloadCsvButton.classList.remove('hidden');
         // Set up the download button functionality
         downloadCsvButton.onclick = () => generateCsvDownload(extractedData);
@@ -140,7 +140,12 @@ extractButton.addEventListener('click', async () => {
   reader.readAsText(file);
 });
 
-function displayDataAsTable(data: ExtractedData[], container: HTMLElement) {
+function displayDataAsTable(data: ExtractedData[], container: HTMLElement, isPreview: boolean = false) {
+  const PREVIEW_ROW_COUNT = 5;
+
+  // Clear previous content
+  container.innerHTML = '';
+
   const table = document.createElement('table');
 
   // Create header row
@@ -162,9 +167,30 @@ function displayDataAsTable(data: ExtractedData[], container: HTMLElement) {
     row.insertCell().textContent = item.tac;
   });
 
-  // Clear previous content and append the new table
-  container.innerHTML = '';
-  container.appendChild(table);
+  if (isPreview && data.length > PREVIEW_ROW_COUNT) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-preview-wrapper preview-active';
+
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+    tableContainer.appendChild(table);
+    
+    const showMoreButton = document.createElement('button');
+    showMoreButton.className = 'show-more-button';
+    showMoreButton.textContent = `Show all ${data.length} rows`;
+    showMoreButton.setAttribute('aria-label', `Show all ${data.length} rows`);
+    
+    showMoreButton.onclick = () => {
+      wrapper.classList.remove('preview-active');
+      showMoreButton.remove();
+    };
+
+    wrapper.appendChild(tableContainer);
+    wrapper.appendChild(showMoreButton);
+    container.appendChild(wrapper);
+  } else {
+    container.appendChild(table);
+  }
 }
 
 function dataToCsvString(data: ExtractedData[]): string {
@@ -248,7 +274,7 @@ function renderHistory() {
     checkbox.setAttribute('aria-label', `Select extraction from ${timestampStr} for analysis`);
 
     const summaryText = document.createElement('span');
-    summaryText.textContent = `Extracted on ${timestampStr}`;
+    summaryText.textContent = `Extracted on ${timestampStr} (${entry.data.length} rows)`;
 
     summary.appendChild(checkbox);
     summary.appendChild(summaryText);
@@ -257,7 +283,7 @@ function renderHistory() {
     content.className = 'history-item-content';
 
     const tableContainer = document.createElement('div');
-    displayDataAsTable(entry.data, tableContainer);
+    displayDataAsTable(entry.data, tableContainer, true);
 
     const downloadButton = document.createElement('button');
     downloadButton.textContent = 'Download CSV';
