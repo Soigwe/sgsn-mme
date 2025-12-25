@@ -29,6 +29,7 @@ type ExtractedData = {
   rat: string;
   location: string;
   tac: string;
+  msc: string;
 };
 
 type HistoryEntry = {
@@ -90,8 +91,8 @@ extractButton.addEventListener('click', async () => {
 
       const lines = fileContent.split('\n');
       const extractedData: ExtractedData[] = [];
-      // Regex to capture LAC, RAT, LOCATION, and TAC
-      const extractionRegex = /-lac\s+(\d+)\s+-at\s+(\S+).*?-gan\s+([A-Z]+)_(\d+)/;
+      // Regex to capture LAC, RAT, LOCATION, TAC and MSC/VLR (assuming -vlr or -msc flag)
+      const extractionRegex = /-lac\s+(\d+)\s+-at\s+(\S+).*?-gan\s+([A-Z]+)_(\d+).*?-(?:vlr|msc)\s+(\S+)/i;
 
       for (const line of lines) {
         // Skip empty or whitespace-only lines from processing
@@ -106,6 +107,7 @@ extractButton.addEventListener('click', async () => {
             rat: match[2],
             location: match[3],
             tac: match[4],
+            msc: match[5]
           };
           extractedData.push(record);
         } else {
@@ -121,7 +123,7 @@ extractButton.addEventListener('click', async () => {
         downloadCsvButton.onclick = () => generateCsvDownload(extractedData);
         saveExtractionToHistory(extractedData);
       } else {
-        responseContainer.textContent = 'No matching LAC, RAT, LOCATION, and TAC data found in the file.';
+        responseContainer.textContent = 'No matching LAC, RAT, LOCATION, TAC, and MSC data found in the file. Ensure the file contains "-vlr" or "-msc" flags.';
         downloadCsvButton.classList.add('hidden');
       }
     } catch (error) {
@@ -151,7 +153,7 @@ function displayDataAsTable(data: ExtractedData[], container: HTMLElement, isPre
   // Create header row
   const thead = table.createTHead();
   const headerRow = thead.insertRow();
-  ['LAC', 'RAT', 'LOCATION', 'TAC'].forEach(headerText => {
+  ['LAC', 'RAT', 'LOCATION', 'TAC', 'MSC/VLR'].forEach(headerText => {
     const th = document.createElement('th');
     th.textContent = headerText;
     headerRow.appendChild(th);
@@ -165,6 +167,7 @@ function displayDataAsTable(data: ExtractedData[], container: HTMLElement, isPre
     row.insertCell().textContent = item.rat;
     row.insertCell().textContent = item.location;
     row.insertCell().textContent = item.tac;
+    row.insertCell().textContent = item.msc;
   });
 
   if (isPreview && data.length > PREVIEW_ROW_COUNT) {
@@ -194,14 +197,19 @@ function displayDataAsTable(data: ExtractedData[], container: HTMLElement, isPre
 }
 
 function dataToCsvString(data: ExtractedData[]): string {
-  const headers = ['LAC', 'RAT', 'LOCATION', 'TAC'];
-  // The key names in ExtractedData are lowercase, so map headers to them
-  const dataKeys = headers.map(h => h.toLowerCase()) as (keyof ExtractedData)[];
+  const headers = ['LAC', 'RAT', 'LOCATION', 'TAC', 'MSC/VLR'];
+  const headerToKeyMap: Record<string, keyof ExtractedData> = {
+    'LAC': 'lac',
+    'RAT': 'rat',
+    'LOCATION': 'location',
+    'TAC': 'tac',
+    'MSC/VLR': 'msc'
+  };
   
   const csvRows = [
     headers.join(','), // header row
     ...data.map(row => 
-      dataKeys.map(key => `"${row[key]}"`).join(',')
+      headers.map(h => `"${row[headerToKeyMap[h]]}"`).join(',')
     )
   ];
   
@@ -472,7 +480,7 @@ async function performAnalysis(endpoint: string, analysisType: 'zip' | 'json' | 
                               `Server Message:\n${error.message}\n\n` +
                               `Please verify the following:\n` +
                               `• Ensure the selected files are not empty.\n` +
-                              `• Check that all selected files have consistent column headers (LAC, RAT, LOCATION, TAC).\n` +
+                              `• Check that all selected files have consistent column headers (LAC, RAT, LOCATION, TAC, MSC/VLR).\n` +
                               `• The server may have other specific data requirements not met by the selection.`;
         } else {
             friendlyMessage = error.message;
@@ -512,7 +520,7 @@ async function performAiAnalysis() {
       'Your task is to analyze these datasets and identify any rows that are present in some files but are missing in others.',
       'These datasets are expected to be very similar, so any differences are significant and should be highlighted.',
       'List the unique or missing rows and clearly specify which file(s) they were found in and which file(s) they were missing from.',
-      'The columns are LAC, RAT, LOCATION, TAC.',
+      'The columns are LAC, RAT, LOCATION, TAC, and MSC/VLR.',
       'Format your output clearly for easy reading. Here are the datasets:\n'
     ];
 
@@ -525,7 +533,7 @@ async function performAiAnalysis() {
     const fullPrompt = promptParts.join('\n');
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: fullPrompt,
     });
 
